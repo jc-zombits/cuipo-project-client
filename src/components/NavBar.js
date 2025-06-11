@@ -21,7 +21,7 @@ export default function NavBar() {
 
   const customStyles = {
     navbar: {
-      background: 'linear-gradient(to right, #003366, #2e8b57)', // azul a verde
+      background: 'linear-gradient(to right, #003366,rgb(165, 172, 168))', // azul a verde
       padding: '0 24px',
       borderBottom: '1px solid #2e8b57',
     },

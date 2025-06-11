@@ -13,18 +13,16 @@ export default function Home() {
   const [selectedTable, setSelectedTable] = useState(null);
   const [selectedTableData, setSelectedTableData] = useState(null);
   const [fetchingTableData, setFetchingTableData] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
-  // Paleta de colores
   const colors = {
-    //background: '#3674b5',
-    card: '#ffffff',
+    card: '#ecfae5',
     title: '#ffffdd',
     border: '#e0e0e0',
     accent: '#211c84',
     error: '#ff4d4f',
   };
 
-  // Estilos reutilizables
   const styles = {
     buttonPrimary: {
       backgroundColor: colors.accent,
@@ -36,6 +34,11 @@ export default function Home() {
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
+    },
+    animatedSection: {
+      maxHeight: showDetail ? '1000px' : '0px',
+      overflow: 'hidden',
+      transition: 'max-height 0.5s ease',
     },
   };
 
@@ -58,7 +61,8 @@ export default function Home() {
   const handleCardClick = async (tableName) => {
     setSelectedTable(tableName);
     setFetchingTableData(true);
-    
+    setShowDetail(false);
+
     try {
       const response = await axios.get(`http://localhost:5005/api/v1/cuipo/tables/${tableName}`);
       
@@ -70,9 +74,9 @@ export default function Home() {
         name: tableName,
         fields: Object.keys(response.data.rows[0]),
         count: response.data.rows.length,
-        sampleData: response.data.rows.slice(0, 3), // Muestra 3 registros de ejemplo
+        sampleData: response.data.rows,
       });
-      
+
       setModalOpen(true);
     } catch (error) {
       message.error(error.response?.data?.message || 'Error al cargar detalles de la tabla');
@@ -84,7 +88,7 @@ export default function Home() {
 
   const handleModalClose = () => {
     setModalOpen(false);
-    // Limpiar después de un pequeño delay para mejor animación
+    setShowDetail(false);
     setTimeout(() => {
       setSelectedTable(null);
       setSelectedTableData(null);
@@ -92,11 +96,7 @@ export default function Home() {
   };
 
   const handleViewDetails = () => {
-    handleModalClose();
-    // Usar router.push si estás usando Next.js router
-    setTimeout(() => {
-      window.location.href = `/detalle/${selectedTable}`;
-    }, 200);
+    setShowDetail(true);
   };
 
   return (
@@ -151,7 +151,7 @@ export default function Home() {
                 <Title 
                   level={5} 
                   style={styles.cardTitle}
-                  title={table} // Tooltip para nombres largos
+                  title={table}
                 >
                   {table}
                 </Title>
@@ -166,18 +166,14 @@ export default function Home() {
         open={modalOpen}
         onCancel={handleModalClose}
         footer={[
-          <Button
-            key="close"
-            onClick={handleModalClose}
-          >
-            Cerrar
-          </Button>,
+          <Button key="close" onClick={handleModalClose}>Cerrar</Button>,
           <Button
             key="details"
             type="primary"
             style={styles.buttonPrimary}
             onClick={handleViewDetails}
             loading={fetchingTableData}
+            disabled={showDetail}
           >
             Ver detalle
           </Button>,
@@ -187,7 +183,7 @@ export default function Home() {
         destroyOnHidden
       >
         {selectedTableData ? (
-          <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          <div>
             <Text strong>Nombre:</Text> {selectedTableData.name}<br /><br />
             
             <Text strong>Campos ({selectedTableData.fields.length}):</Text>
@@ -213,6 +209,50 @@ export default function Home() {
             </div>
             
             <Text strong>Cantidad de registros:</Text> {selectedTableData.count}<br /><br />
+
+            {/* Detalle expandible */}
+            <div style={styles.animatedSection}>
+              <div style={{ overflowX: 'auto', marginTop: '12px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      {selectedTableData.fields.map((field, idx) => (
+                        <th 
+                          key={idx}
+                          style={{
+                            border: '1px solid #ccc',
+                            padding: '6px',
+                            background: '#fafafa',
+                            textAlign: 'left',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          {field}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedTableData.sampleData.slice(0, 15).map((row, idx) => (
+                      <tr key={idx}>
+                        {selectedTableData.fields.map((field, fidx) => (
+                          <td
+                            key={fidx}
+                            style={{
+                              border: '1px solid #eee',
+                              padding: '6px',
+                              fontSize: '0.85rem',
+                            }}
+                          >
+                            {row[field] !== null ? String(row[field]) : <i style={{ color: '#999' }}>null</i>}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
