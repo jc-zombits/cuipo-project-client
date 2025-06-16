@@ -117,11 +117,11 @@ export default function Ejecucion() {
           } else if (key === 'codigo_y_nombre_del_producto_mga') {
             return {
               title: 'Producto MGA',
-              dataIndex: 'codigo_y_nombre_del_producto_mga',
-              render: (text, record) => (
+              dataIndex: key,
+              render: (text, record, index) => (
                 <SelectProductoFiltrado
                   value={text}
-                  onChange={value => handleProductoChange(value, record.key)}
+                  onChange={value => handleProductoChange(value, index)} // ✅ usa `index`
                   proyecto={record.proyecto_}
                 />
               )
@@ -160,19 +160,21 @@ export default function Ejecucion() {
     });
   };
 
-  const handleProductoChange = (value, key) => {
+  const handleProductoChange = (value, rowIndex) => {
     const codigoNumerico = value?.split('-')[0]?.trim() || '';
 
-    setData(prev => prev.map(item =>
-      item.key === key
-        ? {
-          ...item,
-          codigo_y_nombre_del_producto_mga: value,
-          producto_cuipo: codigoNumerico,
-          validador_del_producto: value ? "Producto OK" : "FALTA DILIGENCIAR"
-        }
-        : item
-    ));
+    setData(prev => {
+      const updatedRow = {
+        ...prev[rowIndex],
+        codigo_y_nombre_del_producto_mga: value,
+        producto_cuipo: codigoNumerico,
+        validador_del_producto: value ? "PRODUCTO OK" : "FALTA DILIGENCIAR PRODUCTO"
+      };
+
+      const newData = [...prev];
+      newData[rowIndex] = updatedRow;
+      return newData;
+    });
   };
 
   const saveChanges = () => {
