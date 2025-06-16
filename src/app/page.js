@@ -17,7 +17,7 @@ export default function Home() {
 
   const colors = {
     card: '#ecfae5',
-    title: '#ffffdd',
+    title: '#211c84',
     border: '#e0e0e0',
     accent: '#211c84',
     error: '#ff4d4f',
