@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Row, Col, Card, Modal, Typography, Spin, message, Button } from 'antd';
+import { Row, Col, Card, Modal, Typography, Spin, message, Button, Tag, Divider } from 'antd';
 import axios from 'axios';
+import { DatabaseOutlined, TableOutlined, BarChartOutlined, CloseOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -15,31 +16,70 @@ export default function Home() {
   const [fetchingTableData, setFetchingTableData] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
 
+  // Paleta de colores profesional
   const colors = {
-    card: '#ecfae5',
-    title: '#211c84',
-    border: '#e0e0e0',
-    accent: '#211c84',
-    error: '#ff4d4f',
+    primary: '#211c84',       // Azul oscuro principal
+    secondary: '#4a54e1',     // Azul más claro
+    accent: '#52c41a',        // Verde para acentos
+    background: '#f8f9fa',    // Fondo claro
+    cardBg: '#ffffff',        // Fondo de tarjetas
+    textDark: '#2f3542',      // Texto oscuro
+    textLight: '#7f8c8d',     // Texto secundario
+    border: '#e8e8e8',        // Bordes suaves
+    error: '#ff4d4f',         // Rojo para errores
+    highlight: '#f6ffed',     // Fondo destacado
   };
 
+  // Estilos reutilizables
   const styles = {
     buttonPrimary: {
-      backgroundColor: colors.accent,
+      backgroundColor: colors.primary,
       color: 'white',
       border: 'none',
+      fontWeight: 500,
+      borderRadius: '6px',
+      height: '40px',
+      padding: '0 20px',
+      '&:hover': {
+        backgroundColor: '#3a36a0',
+      }
     },
-    cardTitle: {
+    buttonSecondary: {
+      backgroundColor: 'transparent',
+      color: colors.primary,
+      border: `1px solid ${colors.primary}`,
+      fontWeight: 500,
+      borderRadius: '6px',
+      height: '40px',
+      padding: '0 20px',
+    },
+    card: {
+      backgroundColor: colors.cardBg,
+      border: `1px solid ${colors.border}`,
+      borderRadius: '12px',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        transform: 'translateY(-2px)',
+        borderColor: colors.primary,
+      }
+    },
+    modal: {
+      borderRadius: '12px',
+      overflow: 'hidden',
+    },
+    tableHeader: {
+      backgroundColor: '#fafafa',
+      fontWeight: 600,
+      color: colors.textDark,
+    },
+    tag: {
+      backgroundColor: colors.highlight,
       color: colors.accent,
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-    },
-    animatedSection: {
-      maxHeight: showDetail ? '1000px' : '0px',
-      overflow: 'hidden',
-      transition: 'max-height 0.5s ease',
-    },
+      border: `1px solid ${colors.accent}`,
+      borderRadius: '4px',
+    }
   };
 
   useEffect(() => {
@@ -96,170 +136,350 @@ export default function Home() {
   };
 
   const handleViewDetails = () => {
-    setShowDetail(true);
+    setShowDetail(!showDetail);
   };
 
   return (
     <div style={{ 
-      padding: '2rem', 
+      padding: '40px', 
       background: colors.background, 
       minHeight: '100vh',
-      borderRadius: '10px',
     }}>
-      <Title 
-        level={2} 
-        style={{ 
-          color: colors.title, 
+      <div style={{ 
+        maxWidth: '1400px', 
+        margin: '0 auto',
+      }}>
+        {/* Header */}
+        <div style={{ 
           textAlign: 'center', 
-          marginBottom: '2rem',
-        }}
-      >
-        Proyecto CUIPO - Ejecución presupuestal
-      </Title>
-
-      {loading ? (
-        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <Spin size="large" />
-          <Text style={{ display: 'block', marginTop: '1rem' }}>Cargando tablas...</Text>
-        </div>
-      ) : tables.length === 0 ? (
-        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <Text>No se encontraron tablas disponibles</Text>
-        </div>
-      ) : (
-        <Row gutter={[16, 16]} justify="center">
-          {tables.map((table) => (
-            <Col 
-              xs={24} 
-              sm={12} 
-              md={8} 
-              lg={6} 
-              key={table}
-              style={{ display: 'flex' }}
-            >
-              <Card
-                hoverable
-                style={{
-                  backgroundColor: colors.card,
-                  border: `1px solid ${colors.border}`,
-                  width: '100%',
-                  cursor: fetchingTableData ? 'wait' : 'pointer',
-                }}
-                onClick={() => !fetchingTableData && handleCardClick(table)}
-                loading={fetchingTableData && selectedTable === table}
-              >
-                <Title 
-                  level={5} 
-                  style={styles.cardTitle}
-                  title={table}
-                >
-                  {table}
-                </Title>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      )}
-
-      <Modal
-        title={`Resumen de tabla: ${selectedTable || ''}`}
-        open={modalOpen}
-        onCancel={handleModalClose}
-        footer={[
-          <Button key="close" onClick={handleModalClose}>Cerrar</Button>,
-          <Button
-            key="details"
-            type="primary"
-            style={styles.buttonPrimary}
-            onClick={handleViewDetails}
-            loading={fetchingTableData}
-            disabled={showDetail}
+          marginBottom: '40px',
+          padding: '20px 0',
+        }}>
+          <Title 
+            level={2} 
+            style={{ 
+              color: colors.primary, 
+              marginBottom: '8px',
+              fontWeight: 600,
+            }}
           >
-            Ver detalle
-          </Button>,
-        ]}
-        width={800}
-        centered
-        destroyOnHidden
-      >
-        {selectedTableData ? (
-          <div>
-            <Text strong>Nombre:</Text> {selectedTableData.name}<br /><br />
-            
-            <Text strong>Campos ({selectedTableData.fields.length}):</Text>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-              gap: '8px',
-              margin: '12px 0'
-            }}>
-              {selectedTableData.fields.map((field, idx) => (
-                <div 
-                  key={idx} 
-                  style={{
-                    padding: '4px 8px',
-                    background: '#f5f5f5',
-                    borderRadius: '4px',
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  {field}
-                </div>
-              ))}
-            </div>
-            
-            <Text strong>Cantidad de registros:</Text> {selectedTableData.count}<br /><br />
+            <DatabaseOutlined style={{ marginRight: '12px' }} />
+            Proyecto CUIPO - Ejecución Presupuestal
+          </Title>
+          <Text style={{ 
+            color: colors.textLight,
+            fontSize: '16px',
+          }}>
+            Visualización y exploración de tablas de base de datos
+          </Text>
+        </div>
 
-            {/* Detalle expandible */}
-            <div style={styles.animatedSection}>
-              <div style={{ overflowX: 'auto', marginTop: '12px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      {selectedTableData.fields.map((field, idx) => (
-                        <th 
-                          key={idx}
-                          style={{
-                            border: '1px solid #ccc',
-                            padding: '6px',
-                            background: '#fafafa',
-                            textAlign: 'left',
-                            fontSize: '0.85rem',
-                          }}
-                        >
-                          {field}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedTableData.sampleData.slice(0, 15).map((row, idx) => (
-                      <tr key={idx}>
-                        {selectedTableData.fields.map((field, fidx) => (
-                          <td
-                            key={fidx}
-                            style={{
-                              border: '1px solid #eee',
-                              padding: '6px',
-                              fontSize: '0.85rem',
-                            }}
-                          >
-                            {row[field] !== null ? String(row[field]) : <i style={{ color: '#999' }}>null</i>}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        {/* Contenido principal */}
+        {loading ? (
+          <div style={{ 
+            textAlign: 'center', 
+            marginTop: '60px',
+            padding: '40px',
+            background: colors.cardBg,
+            borderRadius: '12px',
+          }}>
+            <Spin size="large" />
+            <Text style={{ 
+              display: 'block', 
+              marginTop: '20px',
+              color: colors.textDark,
+              fontSize: '16px',
+            }}>
+              Cargando estructura de tablas...
+            </Text>
+          </div>
+        ) : tables.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            marginTop: '60px',
+            padding: '40px',
+            background: colors.cardBg,
+            borderRadius: '12px',
+          }}>
+            <TableOutlined style={{ 
+              fontSize: '48px', 
+              color: colors.textLight,
+              marginBottom: '16px',
+            }} />
+            <Text style={{ 
+              display: 'block',
+              color: colors.textDark,
+              fontSize: '16px',
+            }}>
+              No se encontraron tablas disponibles en la base de datos
+            </Text>
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <Spin size="large" />
-          </div>
+          <>
+            <div style={{ 
+              marginBottom: '24px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <Text strong style={{ 
+                color: colors.textDark,
+                fontSize: '16px',
+              }}>
+                <TableOutlined style={{ marginRight: '8px' }} />
+                {tables.length} tablas disponibles
+              </Text>
+            </div>
+
+            <Row gutter={[24, 24]}>
+              {tables.map((table) => (
+                <Col 
+                  xs={24} 
+                  sm={12} 
+                  md={8} 
+                  lg={6} 
+                  key={table}
+                >
+                  <Card
+                    hoverable
+                    style={{
+                      ...styles.card,
+                      cursor: fetchingTableData ? 'not-allowed' : 'pointer',
+                      opacity: fetchingTableData ? 0.7 : 1,
+                    }}
+                    onClick={() => !fetchingTableData && handleCardClick(table)}
+                    loading={fetchingTableData && selectedTable === table}
+                    styles={{
+                      padding: '20px',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div style={{ 
+                      display: 'flex',
+                      alignItems: 'center',
+                      marginBottom: '12px',
+                    }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        background: '#f0f5ff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: '12px',
+                        color: colors.primary,
+                      }}>
+                        <TableOutlined />
+                      </div>
+                      <Title 
+                        level={5} 
+                        style={{
+                          color: colors.primary,
+                          margin: 0,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          flex: 1,
+                        }}
+                        title={table}
+                      >
+                        {table}
+                      </Title>
+                    </div>
+                    <div style={{
+                      marginTop: 'auto',
+                      paddingTop: '12px',
+                      borderTop: `1px solid ${colors.border}`,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                    }}>
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        Haga clic para ver detalles
+                      </Text>
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </>
         )}
-      </Modal>
+
+        {/* Modal de detalles */}
+        <Modal
+          title={
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <BarChartOutlined style={{ 
+                color: colors.primary, 
+                marginRight: '12px',
+                fontSize: '20px',
+              }} />
+              <span>Resumen de tabla: {selectedTable || ''}</span>
+            </div>
+          }
+          open={modalOpen}
+          onCancel={handleModalClose}
+          footer={[
+            <Button 
+              key="close" 
+              onClick={handleModalClose}
+              style={styles.buttonSecondary}
+              icon={<CloseOutlined />}
+            >
+              Cerrar
+            </Button>,
+            <Button
+              key="details"
+              type="primary"
+              style={styles.buttonPrimary}
+              onClick={handleViewDetails}
+              loading={fetchingTableData}
+            >
+              {showDetail ? 'Ocultar detalle' : 'Ver detalle'}
+            </Button>,
+          ]}
+          width={900}
+          centered
+          destroyOnClose
+          style={styles.modal}
+          styles={{ padding: '24px' }}
+        >
+          {selectedTableData ? (
+            <div>
+              {/* Información básica */}
+              <div style={{ 
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '20px',
+                marginBottom: '24px',
+              }}>
+                <div style={{
+                  padding: '16px',
+                  background: '#f9f9f9',
+                  borderRadius: '8px',
+                }}>
+                  <Text strong style={{ display: 'block', color: colors.textLight }}>Nombre de tabla</Text>
+                  <Text style={{ fontSize: '16px' }}>{selectedTableData.name}</Text>
+                </div>
+                
+                <div style={{
+                  padding: '16px',
+                  background: '#f9f9f9',
+                  borderRadius: '8px',
+                }}>
+                  <Text strong style={{ display: 'block', color: colors.textLight }}>Campos</Text>
+                  <Text style={{ fontSize: '16px' }}>{selectedTableData.fields.length}</Text>
+                </div>
+                
+                <div style={{
+                  padding: '16px',
+                  background: '#f9f9f9',
+                  borderRadius: '8px',
+                }}>
+                  <Text strong style={{ display: 'block', color: colors.textLight }}>Registros</Text>
+                  <Text style={{ fontSize: '16px' }}>{selectedTableData.count}</Text>
+                </div>
+              </div>
+
+              {/* Lista de campos */}
+              <Divider orientation="left" style={{ color: colors.textLight }}>
+                Campos disponibles
+              </Divider>
+              <div style={{ 
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+                marginBottom: '24px',
+              }}>
+                {selectedTableData.fields.map((field, idx) => (
+                  <Tag key={idx} style={styles.tag}>
+                    {field}
+                  </Tag>
+                ))}
+              </div>
+
+              {/* Detalle expandible */}
+              {showDetail && (
+                <>
+                  <Divider orientation="left" style={{ color: colors.textLight }}>
+                    Muestra de datos (primeros 15 registros)
+                  </Divider>
+                  <div style={{ 
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ 
+                        width: '100%', 
+                        borderCollapse: 'collapse',
+                      }}>
+                        <thead>
+                          <tr>
+                            {selectedTableData.fields.map((field, idx) => (
+                              <th 
+                                key={idx}
+                                style={{
+                                  ...styles.tableHeader,
+                                  padding: '12px',
+                                  borderBottom: `1px solid ${colors.border}`,
+                                }}
+                              >
+                                {field}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedTableData.sampleData.slice(0, 15).map((row, idx) => (
+                            <tr key={idx} style={{
+                              borderBottom: `1px solid ${colors.border}`,
+                              '&:last-child': {
+                                borderBottom: 'none',
+                              },
+                              '&:hover': {
+                                backgroundColor: '#fafafa',
+                              }
+                            }}>
+                              {selectedTableData.fields.map((field, fidx) => (
+                                <td
+                                  key={fidx}
+                                  style={{
+                                    padding: '12px',
+                                    borderRight: `1px solid ${colors.border}`,
+                                    fontSize: '14px',
+                                    '&:last-child': {
+                                      borderRight: 'none',
+                                    }
+                                  }}
+                                >
+                                  {row[field] !== null ? (
+                                    <Text style={{ color: colors.textDark }}>
+                                      {String(row[field])}
+                                    </Text>
+                                  ) : (
+                                    <Text type="secondary" italic>null</Text>
+                                  )}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <Spin size="large" />
+            </div>
+          )}
+        </Modal>
+      </div>
     </div>
   );
 }
