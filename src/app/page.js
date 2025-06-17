@@ -40,9 +40,6 @@ export default function Home() {
       borderRadius: '6px',
       height: '40px',
       padding: '0 20px',
-      '&:hover': {
-        backgroundColor: '#3a36a0',
-      }
     },
     buttonSecondary: {
       backgroundColor: 'transparent',
@@ -59,7 +56,7 @@ export default function Home() {
       borderRadius: '12px',
       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
       transition: 'all 0.3s ease',
-      '&:hover': {
+      ':hover': {
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
         transform: 'translateY(-2px)',
         borderColor: colors.primary,
@@ -250,10 +247,12 @@ export default function Home() {
                     onClick={() => !fetchingTableData && handleCardClick(table)}
                     loading={fetchingTableData && selectedTable === table}
                     styles={{
-                      padding: '20px',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
+                      body: {
+                        padding: '20px',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }
                     }}
                   >
                     <div style={{ 
@@ -343,8 +342,22 @@ export default function Home() {
           width={900}
           centered
           destroyOnClose
-          style={styles.modal}
-          styles={{ padding: '24px' }}
+          styles={{
+            body: {
+              padding: '24px'
+            },
+            content: {
+              borderRadius: '12px',
+            },
+            header: {
+              borderBottom: `1px solid ${colors.border}`,
+              padding: '16px 24px',
+            },
+            footer: {
+              borderTop: `1px solid ${colors.border}`,
+              padding: '16px 24px',
+            }
+          }}
         >
           {selectedTableData ? (
             <div>
@@ -436,10 +449,7 @@ export default function Home() {
                           {selectedTableData.sampleData.slice(0, 15).map((row, idx) => (
                             <tr key={idx} style={{
                               borderBottom: `1px solid ${colors.border}`,
-                              '&:last-child': {
-                                borderBottom: 'none',
-                              },
-                              '&:hover': {
+                              ':hover': {
                                 backgroundColor: '#fafafa',
                               }
                             }}>
@@ -450,9 +460,6 @@ export default function Home() {
                                     padding: '12px',
                                     borderRight: `1px solid ${colors.border}`,
                                     fontSize: '14px',
-                                    '&:last-child': {
-                                      borderRight: 'none',
-                                    }
                                   }}
                                 >
                                   {row[field] !== null ? (
