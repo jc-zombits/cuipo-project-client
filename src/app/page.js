@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Row, Col, Card, Modal, Typography, Spin, message, Button, Tag, Divider } from 'antd';
 import axios from 'axios';
 import { DatabaseOutlined, TableOutlined, BarChartOutlined, CloseOutlined } from '@ant-design/icons';
+import api from '@/services/api';
 
 const { Title, Text } = Typography;
 
@@ -80,13 +81,38 @@ export default function Home() {
   };
 
   useEffect(() => {
+    console.log('API Base URL:', process.env.REACT_APP_API_URL);
+    console.log('API Key:', process.env.REACT_APP_API_KEY ? 'Presente' : 'Faltante');
+  }, []);
+
+  // Reemplaza tu useEffect con esta versión mejorada
+  useEffect(() => {
     const fetchTables = async () => {
       try {
-        const response = await axios.get('http://localhost:5005/api/v1/cuipo/tables');
+        setLoading(true);
+        console.log('Enviando solicitud a /tables');
+        
+        const response = await api.get('/tables', {
+          headers: {
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY}`
+          }
+        });
+        
+        console.log('Respuesta recibida:', response.data);
         setTables(response.data.tables || []);
+        
       } catch (error) {
-        message.error('Error al obtener tablas');
-        console.error('Error fetching tables:', error);
+        console.error('Error completo:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        
+        if (error.response?.status === 403) {
+          message.error('Error 403: Verifica tu token de autenticación');
+        } else {
+          message.error(`Error al cargar tablas: ${error.message}`);
+        }
       } finally {
         setLoading(false);
       }
@@ -101,7 +127,7 @@ export default function Home() {
     setShowDetail(false);
 
     try {
-      const response = await axios.get(`http://localhost:5005/api/v1/cuipo/tables/${tableName}`);
+      const response = await api.get(`/tables/${tableName}`);
       
       if (!response.data.rows || response.data.rows.length === 0) {
         throw new Error('La tabla no contiene datos');
@@ -116,8 +142,11 @@ export default function Home() {
 
       setModalOpen(true);
     } catch (error) {
-      message.error(error.response?.data?.message || 'Error al cargar detalles de la tabla');
-      console.error('Error loading table details:', error);
+      const errorMessage = error.response?.data?.error || 
+                            error.response?.data?.message || 
+                            'Error al cargar detalles de la tabla';
+        message.error(errorMessage);
+        console.error('Error loading table details:', error.response || error);
     } finally {
       setFetchingTableData(false);
     }
