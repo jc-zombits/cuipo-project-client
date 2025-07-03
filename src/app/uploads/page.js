@@ -77,7 +77,6 @@ const Uploads = () => {
     <div style={{
       padding: '40px',
       minHeight: '100vh',
-      background: colors.lightGray,
     }}>
       <Card
         style={{

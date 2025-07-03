@@ -205,14 +205,39 @@ export default function PresupuestoGrafica() {
   };
 
   return (
-    <div style={{ padding: '20px', background: '#f8f9fa', minHeight: '100vh' }}>
+    <div style={{ padding: '20px', minHeight: '100vh' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <Title level={2} style={{ color: '#211c84', fontWeight: 600 }}>
-            <DatabaseOutlined style={{ marginRight: '12px' }} />
-            Proyecto CUIPO
-          </Title>
-          <Text style={{ color: '#7f8c8d', fontSize: '16px' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '16px',
+            marginBottom: '8px'
+          }}>
+            {/* Logo de la Alcaldía */}
+            <img 
+              src="/alcaldia_logo.png" 
+              alt="Logo Alcaldía" 
+              style={{ 
+                height: '90px', 
+                width: 'auto',
+                objectFit: 'contain'
+              }} 
+            />
+            
+            {/* Título del Proyecto */}
+            <Title level={2} style={{ color: '#211c84', fontWeight: 600, margin: 0 }}>
+              <DatabaseOutlined style={{ marginRight: '12px' }} />
+              Proyecto CUIPO
+            </Title>
+          </div>
+          
+          <Text style={{ 
+            color: '#7b8a80', 
+            fontSize: '16px', 
+            textAlign: 'center' 
+          }}>
             Gráficas estadísticas de los datos presupuestales
           </Text>
         </div>
@@ -224,11 +249,11 @@ export default function PresupuestoGrafica() {
             {/* Gráfica 1 - Presupuesto */}
             <Col xs={24} md={12}>
               <Card 
-                styles={{ padding: '16px' }}
+                styles={{ body: { padding: '16px' } }}
                 style={{ height: '100%', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
               >
                 <div style={{ marginBottom: '16px' }}>
-                  <Text strong style={{ display: 'block', marginBottom: '8px' }}>Filtrar por nombre:</Text>
+                  <Text strong style={{ display: 'block', marginBottom: '8px', color: "#093fb4", fontSize: "16px" }}>Filtrar por nombre:</Text>
                   <Select
                     allowClear
                     showSearch
@@ -237,11 +262,11 @@ export default function PresupuestoGrafica() {
                     onChange={setNombreFiltro}
                     value={nombreFiltro}
                     filterOption={(input, option) =>
-                      option.children.toLowerCase().includes(input.toLowerCase())
+                      (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
                     }
                   >
                     {nombres.map(nombre => (
-                      <Option key={nombre} value={nombre}>{nombre}</Option>
+                      <Select.Option key={nombre} value={nombre}>{nombre}</Select.Option>
                     ))}
                   </Select>
                 </div>
@@ -255,11 +280,11 @@ export default function PresupuestoGrafica() {
             {/* Gráfica 2 - Ejecución */}
             <Col xs={24} md={12}>
               <Card 
-                styles={{ padding: '16px' }}
+                styles={{ body: { padding: '16px' } }}
                 style={{ height: '100%', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
               >
                 <div style={{ marginBottom: '16px' }}>
-                  <Text strong style={{ display: 'block', marginBottom: '8px' }}>Filtrar por proyecto:</Text>
+                  <Text strong style={{ display: 'block', marginBottom: '8px', color: "#093fb4", fontSize: "16px" }}>Filtrar por proyecto:</Text>
                   <Select
                     allowClear
                     showSearch
@@ -268,11 +293,11 @@ export default function PresupuestoGrafica() {
                     onChange={setProyectoFiltro}
                     value={proyectoFiltro}
                     filterOption={(input, option) =>
-                      option.children.toLowerCase().includes(input.toLowerCase())
+                      (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
                     }
                   >
                     {proyectos.map(proyecto => (
-                      <Option key={proyecto} value={proyecto}>{proyecto}</Option>
+                      <Select.Option key={proyecto} value={proyecto}>{proyecto}</Select.Option>
                     ))}
                   </Select>
                 </div>

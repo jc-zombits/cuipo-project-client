@@ -46,6 +46,7 @@ export default function NavBar() {
           { label: 'Uploads', key: '/uploads' },
           { label: 'General', key: '/general' },
           { label: 'Ejecución', key: '/ejecucion' },
+          { label: 'Admin Panel', key: '/adminPanel' },
         ]}
         className="custom-menu"
       />

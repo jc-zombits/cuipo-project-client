@@ -188,8 +188,7 @@ export default function Home() {
 
       {/* Contenido principal */}
       <div style={{ 
-        padding: '40px', 
-        background: colors.background, 
+        padding: '40px',  
         minHeight: '100vh',
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -387,7 +386,7 @@ export default function Home() {
                 {showDetail ? 'Ocultar detalle' : 'Ver detalle'}
               </Button>,
             ]}
-            width={900}
+            width={1400}
             centered
             destroyOnHidden
             styles={{

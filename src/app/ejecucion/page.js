@@ -1,305 +1,233 @@
-'use client';
+'use client'
 
-import { Table, Select, Button, message } from 'antd';
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Table, Select, Button, Card, Typography, Space, message } from 'antd';
+import { DownloadOutlined, SyncOutlined, ClearOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
-// Función para guardar en localStorage
-const saveToLocalStorage = (tableName, data) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(`cuipo_${tableName}`, JSON.stringify(data));
-  }
-};
+const { Title } = Typography;
+const { Option } = Select;
 
-// Función para cargar desde localStorage
-const loadFromLocalStorage = (tableName) => {
-  if (typeof window !== 'undefined') {
-    const savedData = localStorage.getItem(`cuipo_${tableName}`);
-    return savedData ? JSON.parse(savedData) : null;
-  }
-  return null;
-};
+const EjecucionPresupuestal = () => {
+  const [tablasDisponibles, setTablasDisponibles] = useState([]);
+  const [tablaSeleccionada, setTablaSeleccionada] = useState(null);
+  const [datosTabla, setDatosTabla] = useState([]);
+  const [columnas, setColumnas] = useState([]);
+  const [cargando, setCargando] = useState(false);
+  const [ejecutando, setEjecutando] = useState(false);
+  const [progreso, setProgreso] = useState(0);
 
-// Componente hijo para CPC
-const SelectCPCFiltrado = ({ value, onChange, tieneCPC }) => {
-  const [options, setOptions] = useState([]);
-
+  // Obtener listado de tablas disponibles al cargar el componente
   useEffect(() => {
-    const fetchData = async () => {
-      if (tieneCPC) {
-        try {
-          const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/cpc?tiene_cpc=${tieneCPC}`);
-          const mapped = res.data.map(c => ({
-            label: `${c.codigo} - ${c.clase_o_subclase}`,
-            value: `${c.codigo} - ${c.clase_o_subclase}`,
-            codigo: c.codigo
-          }));
-          setOptions(mapped);
-        } catch {
-          message.error('Error al cargar opciones CPC para una fila');
-        }
-      }
-    };
+    obtenerTablasDisponibles();
+  }, []);
 
-    fetchData();
-  }, [tieneCPC]);
-
-  return (
-    <Select
-      value={value}
-      onChange={onChange}
-      style={{ width: '100%' }}
-      options={options}
-      placeholder="Seleccione un CPC"
-    />
-  );
-};
-
-// Componente hijo para Producto MGA
-const SelectProductoFiltrado = ({ value, onChange, proyecto }) => {
-  const [options, setOptions] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (proyecto && proyecto.trim() !== '') {
-      setLoading(true);
-      axios.get(`${process.env.NEXT_PUBLIC_API_URL}/productos_por_proyecto/${proyecto.trim()}`)
-        .then(res => setOptions(res.data))
-        .catch(() => message.error('Error cargando productos del proyecto'))
-        .finally(() => setLoading(false));
-    } else {
-      setOptions([]);
+  const obtenerTablasDisponibles = async () => {
+    try {
+      setCargando(true);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/ejecucion/obtener-tablas-disponibles`);
+      setTablasDisponibles(response.data.tablasDisponibles);
+    } catch (error) {
+      message.error('Error al obtener tablas disponibles');
+      console.error(error);
+    } finally {
+      setCargando(false);
     }
-  }, [proyecto]);
-
-  return (
-    <Select
-      value={value || undefined}
-      onChange={onChange}
-      options={options}
-      loading={loading}
-      placeholder="Seleccione producto"
-      showSearch
-      allowClear
-      style={{ width: '100%' }}
-      filterOption={(input, option) =>
-        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-      }
-      disabled={!proyecto || loading}
-      notFoundContent={
-        !proyecto
-          ? 'Seleccione un proyecto primero'
-          : loading
-            ? 'Cargando...'
-            : 'No hay productos para este proyecto'
-      }
-    />
-  );
-};
-
-export default function Ejecucion() {
-  const [data, setData] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [selectedTable, setSelectedTable] = useState(null);
-
-  const tableOptions = [
-    {
-      label: 'cuipo_plantilla_distrito_2025_primer_trimestre_plan_b',
-      value: 'cuipo_plantilla_distrito_2025_primer_trimestre_plan_b',
-    },
-  ];
-
-  const generateColumns = (rows) => {
-    const keys = Object.keys(rows[0] || {});
-    const dynamicColumns = keys.map(key => {
-      if (key === 'codigo_y_nombre_del_cpc') {
-        return {
-          title: 'Código y nombre del CPC',
-          dataIndex: key,
-          render: (text, record, index) => (
-            <SelectCPCFiltrado
-              value={text}
-              onChange={(value) => handleSelectChange(value, index)}
-              tieneCPC={record.tiene_cpc}
-            />
-          ),
-        };
-      } else if (key === 'codigo_y_nombre_del_producto_mga') {
-        return {
-          title: 'Producto MGA',
-          dataIndex: key,
-          render: (text, record, index) => (
-            <SelectProductoFiltrado
-              value={text}
-              onChange={value => handleProductoChange(value, index)}
-              proyecto={record.proyecto_}
-            />
-          )
-        };
-      } else {
-        return {
-          title: key.replace(/_/g, ' ').toUpperCase(),
-          dataIndex: key,
-        };
-      }
-    });
-    setColumns(dynamicColumns);
   };
 
-  const loadTableData = (tableName) => {
-    setLoading(true);
+  const cargarDatosTabla = async (nombreTabla) => {
+    if (!nombreTabla) return;
     
-    // Primero intenta cargar datos guardados localmente
-    const savedData = loadFromLocalStorage(tableName);
-    
-    if (savedData) {
-      setData(savedData);
-      generateColumns(savedData);
-      setSelectedTable(tableName);
-      setIsEditing(true);
-      setLoading(false);
-      message.info('Datos cargados desde el almacenamiento local');
+    try {
+      setCargando(true);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/ejecucion/obtener-tablas-disponibles?tabla=${nombreTabla}`);
+      
+      if (response.data.datosTabla && response.data.datosTabla.length > 0) {
+        // Generar columnas dinámicamente a partir de las keys del primer objeto
+        const keys = Object.keys(response.data.datosTabla[0]);
+        const columnasGeneradas = keys.map(key => ({
+          title: key.toUpperCase().replace(/_/g, ' '),
+          dataIndex: key,
+          key: key,
+          sorter: (a, b) => {
+            if (typeof a[key] === 'string' && typeof b[key] === 'string') {
+              return a[key].localeCompare(b[key]);
+            }
+            return a[key] - b[key];
+          },
+        }));
+        
+        setColumnas(columnasGeneradas);
+        setDatosTabla(response.data.datosTabla);
+        setTablaSeleccionada(nombreTabla);
+      } else {
+        message.info('La tabla seleccionada no contiene datos');
+        setDatosTabla([]);
+      }
+    } catch (error) {
+      message.error('Error al cargar los datos de la tabla');
+      console.error(error);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const handleCambioTabla = (value) => {
+    cargarDatosTabla(value);
+  };
+
+  const limpiarDatos = () => {
+    setDatosTabla([]);
+    setTablaSeleccionada(null);
+  };
+
+  const ejecutarPresupuesto = async () => {
+    if (!tablaSeleccionada) {
+      message.warning('Por favor seleccione una tabla primero');
       return;
     }
 
-    // Si no hay datos guardados, carga desde la API
-    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/tables/${tableName}`)
-      .then(res => {
-        setData(res.data.rows);
-        generateColumns(res.data.rows);
-        setSelectedTable(tableName);
-        setIsEditing(true);
-        setLoading(false);
-      })
-      .catch(() => {
-        message.error('Error al cargar la tabla');
-        setLoading(false);
-      });
-  };
-
-  const handleSelectChange = (value, rowIndex) => {
-    setData(prevData => {
-      const selectedCodigo = value.split(' - ')[0];
-      const updatedRow = {
-        ...prevData[rowIndex],
-        codigo_y_nombre_del_cpc: value,
-        validador_cpc: value ? "CPC OK" : "FAVOR DILIGENCIAR CPC",
-        cpc_cuipo: selectedCodigo.substring(0, 7)
-      };
-      const newData = [...prevData];
-      newData[rowIndex] = updatedRow;
+    try {
+      setEjecutando(true);
+      setProgreso(0);
       
-      // Guardar automáticamente en localStorage
-      if (selectedTable) {
-        saveToLocalStorage(selectedTable, newData);
-      }
+      // Parte 1
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/procesar/parte1`);
+      setProgreso(20);
+      message.success('Parte 1 completada');
       
-      return newData;
-    });
-  };
-
-  const handleProductoChange = (value, rowIndex) => {
-    const codigoNumerico = value?.split('-')[0]?.trim() || '';
-
-    setData(prev => {
-      const updatedRow = {
-        ...prev[rowIndex],
-        codigo_y_nombre_del_producto_mga: value,
-        producto_cuipo: codigoNumerico,
-        validador_del_producto: value ? "PRODUCTO OK" : "FALTA DILIGENCIAR PRODUCTO"
-      };
-
-      const newData = [...prev];
-      newData[rowIndex] = updatedRow;
+      // Parte 2
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/procesar/parte2`);
+      setProgreso(40);
+      message.success('Parte 2 completada');
       
-      // Guardar automáticamente en localStorage
-      if (selectedTable) {
-        saveToLocalStorage(selectedTable, newData);
-      }
+      // Parte 3
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/procesar/parte3`);
+      setProgreso(60);
+      message.success('Parte 3 completada');
       
-      return newData;
-    });
-  };
-
-  const saveChanges = () => {
-    axios.post(`${process.env.NEXT_PUBLIC_API_URL}/update`, data)
-      .then(() => {
-        message.success('Cambios guardados');
-        setIsEditing(false);
-        // Limpiar el almacenamiento local después de guardar en el servidor
-        if (selectedTable) {
-          localStorage.removeItem(`cuipo_${selectedTable}`);
-        }
-      })
-      .catch(() => message.error('Error al guardar cambios'));
-  };
-
-  const clearLocalProgress = () => {
-    if (selectedTable) {
-      localStorage.removeItem(`cuipo_${selectedTable}`);
-      message.success('Progreso local borrado');
-      // Recargar los datos originales desde la API
-      loadTableData(selectedTable);
+      // Parte 4
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/procesar/parte4`);
+      setProgreso(80);
+      message.success('Parte 4 completada');
+      
+      // Parte 5
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/procesar/parte5`);
+      setProgreso(100);
+      message.success('Proceso completado exitosamente');
+      
+      // Refrescar los datos
+      await cargarDatosTabla(tablaSeleccionada);
+      
+    } catch (error) {
+      console.error('Error en ejecutarPresupuesto:', error);
+      message.error(`Error en el proceso: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setEjecutando(false);
     }
   };
 
   return (
-    <div>
-      <h2>Editor de Tablas CUIPO</h2>
-
-      {!selectedTable && (
-        <div style={{ marginBottom: 16 }}>
-          <Button type="primary" onClick={() => setIsEditing(true)}>
-            Editar tabla
-          </Button>
-        </div>
-      )}
-
-      {isEditing && !selectedTable && (
-        <div style={{ marginBottom: 16 }}>
+    <Card
+      title={<Title level={3} style={{ margin: 0 }}>EJECUCIÓN PRESUPUESTAL</Title>}
+      style={{ 
+        margin: '20px',
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+      }}
+      bordered={false}
+    >
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space size="large" align="center">
           <Select
-            style={{ width: 400 }}
-            placeholder="Seleccione una tabla para editar"
-            options={tableOptions}
-            onChange={loadTableData}
-          />
-        </div>
-      )}
+            showSearch
+            style={{ width: 350 }}
+            placeholder="Seleccione una tabla"
+            optionFilterProp="children"
+            onChange={handleCambioTabla}
+            value={tablaSeleccionada}
+            loading={cargando}
+            filterOption={(input, option) =>
+              option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+          >
+            {tablasDisponibles.map(tabla => (
+              <Option key={tabla} value={tabla}>
+                {tabla}
+              </Option>
+            ))}
+          </Select>
 
-      {selectedTable && (
-        <>
-          <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Button onClick={() => {
-              setIsEditing(false);
-              setSelectedTable(null);
-              setData([]);
-              setColumns([]);
-            }}>
-              Cancelar edición
-            </Button>
-            <Button type="primary" onClick={saveChanges}>
-              Guardar cambios en servidor
-            </Button>
-            <Button 
-              danger 
-              onClick={clearLocalProgress}
-              title="Borrar los datos guardados localmente"
-            >
-              Borrar progreso local
-            </Button>
-          </div>
+          <Button
+            type="primary"
+            icon={<SyncOutlined />}
+            loading={cargando}
+            onClick={() => cargarDatosTabla(tablaSeleccionada)}
+          >
+            Traer datos
+          </Button>
 
-          <Table
-            dataSource={data.map((row, index) => ({ ...row, key: index }))}
-            columns={columns}
-            loading={loading}
-            scroll={{ x: 'max-content' }}
-            size="small"
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            loading={ejecutando}
+            onClick={ejecutarPresupuesto}
+            disabled={!tablaSeleccionada}
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+          >
+            Ejecutar Presupuesto
+          </Button>
+
+          <Button
+            type="default"
+            icon={<DownloadOutlined />}
+            disabled={datosTabla.length === 0}
+          >
+            Exportar a Excel
+          </Button>
+
+          <Button
+            danger
+            icon={<ClearOutlined />}
+            onClick={limpiarDatos}
+            disabled={!tablaSeleccionada || ejecutando}
+          >
+            Limpiar
+          </Button>
+        </Space>
+
+        {ejecutando && (
+          <Progress 
+            percent={progreso}
+            status="active"
+            strokeColor={{
+              '0%': '#108ee9',
+              '100%': '#87d068',
+            }}
           />
-        </>
-      )}
-    </div>
+        )}
+
+        <Table
+          columns={columnas}
+          dataSource={datosTabla}
+          loading={cargando || ejecutando}
+          bordered
+          size="middle"
+          scroll={{ x: 'max-content' }}
+          rowKey={(record) => record.id || JSON.stringify(record)}
+          style={{ 
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+          }}
+          pagination={{
+            showSizeChanger: true,
+            pageSizeOptions: ['10', '20', '50', '100'],
+            showTotal: (total) => `Total ${total} registros`,
+          }}
+        />
+      </Space>
+    </Card>
   );
-}
+};
+
+export default EjecucionPresupuestal;
